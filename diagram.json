@@ -1,0 +1,145 @@
+{
+  "version": 1,
+  "author": "Vinicios Dotto",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-esp32-devkit-c-v4",
+      "id": "esp",
+      "top": 0,
+      "left": -250,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-breadboard-half",
+      "id": "bb1",
+      "top": -40,
+      "left": 80,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-pir-motion-sensor",
+      "id": "pir1",
+      "top": -220,
+      "left": 380,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-photoresistor-sensor",
+      "id": "ldr1",
+      "top": 250,
+      "left": 380,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led1",
+      "top": 70,
+      "left": 250,
+      "attrs": {
+        "color": "red"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r1",
+      "top": 135,
+      "left": 240,
+      "rotate": 90,
+      "attrs": {
+        "value": "220"
+      }
+    }
+  ],
+  "connections": [
+    [
+      "esp:TX",
+      "$serialMonitor:RX",
+      "",
+      []
+    ],
+    [
+      "esp:RX",
+      "$serialMonitor:TX",
+      "",
+      []
+    ],
+
+    [
+      "esp:3V3",
+      "bb1:tp.1",
+      "red",
+      []
+    ],
+    [
+      "esp:GND.1",
+      "bb1:tn.1",
+      "black",
+      []
+    ],
+
+    [
+      "pir1:VCC",
+      "bb1:tp.5",
+      "red",
+      []
+    ],
+    [
+      "pir1:GND",
+      "bb1:tn.5",
+      "black",
+      []
+    ],
+    [
+      "pir1:OUT",
+      "esp:27",
+      "green",
+      []
+    ],
+
+    [
+      "ldr1:VCC",
+      "bb1:tp.20",
+      "red",
+      []
+    ],
+    [
+      "ldr1:GND",
+      "bb1:tn.20",
+      "black",
+      []
+    ],
+    [
+      "ldr1:AO",
+      "esp:34",
+      "blue",
+      []
+    ],
+
+    [
+      "esp:2",
+      "bb1:12t.a",
+      "green",
+      []
+    ],
+    [
+      "bb1:12t.e",
+      "led1:A",
+      "green",
+      []
+    ],
+    [
+      "led1:C",
+      "r1:1",
+      "black",
+      []
+    ],
+    [
+      "r1:2",
+      "bb1:tn.12",
+      "black",
+      []
+    ]
+  ],
+  "dependencies": {}
+}

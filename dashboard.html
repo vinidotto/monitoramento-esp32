@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Monitoramento de Sala · API</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #09111f;
+      --panel: #111c2e;
+      --panel-2: #16243a;
+      --line: #263852;
+      --text: #e8f0fb;
+      --muted: #9db0ca;
+      --accent: #62d4ff;
+      --accent-2: #7c6cff;
+      --ok: #54dc9a;
+      --danger: #ff7b8b;
+      --shadow: 0 20px 55px rgba(0, 0, 0, .25);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font: 15px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 10% 0%, rgba(98, 212, 255, .13), transparent 30%),
+        radial-gradient(circle at 90% 10%, rgba(124, 108, 255, .16), transparent 28%),
+        var(--bg);
+    }
+
+    .shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 42px 0 56px; }
+
+    header { display: flex; justify-content: space-between; gap: 24px; align-items: end; margin-bottom: 28px; }
+    .eyebrow { margin: 0 0 8px; color: var(--accent); font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(28px, 5vw, 46px); letter-spacing: -.045em; line-height: 1.05; }
+    .subtitle { max-width: 680px; margin: 12px 0 0; color: var(--muted); }
+
+    .status { display: flex; align-items: center; gap: 9px; color: var(--muted); white-space: nowrap; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); box-shadow: 0 0 0 5px rgba(157, 176, 202, .12); }
+    .dot.ok { background: var(--ok); box-shadow: 0 0 0 5px rgba(84, 220, 154, .12); }
+    .dot.error { background: var(--danger); box-shadow: 0 0 0 5px rgba(255, 123, 139, .12); }
+
+    .toolbar, .panel, .card {
+      border: 1px solid var(--line);
+      background: rgba(17, 28, 46, .86);
+      box-shadow: var(--shadow);
+      border-radius: 18px;
+    }
+
+    .toolbar { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: end; padding: 16px; margin-bottom: 22px; }
+    label { display: grid; gap: 7px; color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+    input, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 11px 12px;
+      color: var(--text);
+      background: #0b1627;
+      font: inherit;
+      outline: none;
+    }
+    input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(98, 212, 255, .12); }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 11px 15px;
+      color: #07111f;
+      background: linear-gradient(135deg, var(--accent), #9ce7ff);
+      cursor: pointer;
+      font: inherit;
+      font-weight: 800;
+      transition: transform .15s ease, filter .15s ease, opacity .15s ease;
+    }
+    button:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    button:disabled { cursor: wait; opacity: .55; transform: none; }
+    button.secondary { color: var(--text); background: var(--panel-2); border: 1px solid var(--line); }
+    button.danger { color: #fff; background: rgba(255, 123, 139, .16); border: 1px solid rgba(255, 123, 139, .35); }
+
+    .section-title { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin: 28px 0 12px; }
+    h2 { margin: 0; font-size: 18px; letter-spacing: -.02em; }
+    .hint { color: var(--muted); font-size: 13px; }
+
+    .actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .panel { padding: 18px; }
+    .panel h3 { margin: 0 0 4px; font-size: 16px; }
+    .panel p { margin: 0 0 16px; color: var(--muted); font-size: 13px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; }
+    .checkbox { display: flex; align-items: center; gap: 9px; min-height: 43px; color: var(--text); font-size: 14px; text-transform: none; letter-spacing: 0; }
+    .checkbox input { width: 18px; height: 18px; accent-color: var(--accent); }
+
+    .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .card { min-width: 0; overflow: hidden; }
+    .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 17px 13px; border-bottom: 1px solid var(--line); }
+    .route { display: flex; align-items: center; gap: 9px; min-width: 0; }
+    .method { padding: 4px 7px; border-radius: 6px; color: #081321; background: var(--ok); font-size: 10px; font-weight: 900; letter-spacing: .06em; }
+    code { color: var(--accent); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .card-title { margin: 0; font-size: 14px; font-weight: 800; }
+    .result-meta { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
+    .http { padding: 3px 7px; border-radius: 999px; background: rgba(84, 220, 154, .13); color: var(--ok); font-weight: 800; }
+    .http.error { color: var(--danger); background: rgba(255, 123, 139, .13); }
+    pre { min-height: 148px; max-height: 280px; margin: 0; padding: 16px 17px; overflow: auto; color: #c9d8eb; background: rgba(6, 13, 24, .48); font: 12px/1.65 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; word-break: break-word; }
+    .card-foot { display: flex; justify-content: flex-end; padding: 10px 17px 14px; }
+    .card-foot button { padding: 8px 11px; font-size: 12px; }
+
+    .log { max-height: 220px; overflow: auto; padding: 4px 0; }
+    .log-row { display: grid; grid-template-columns: 80px 1fr auto; gap: 12px; padding: 9px 0; border-bottom: 1px solid rgba(38, 56, 82, .65); color: var(--muted); font-size: 12px; }
+    .log-row:last-child { border-bottom: 0; }
+    .log-row strong { color: var(--text); font-weight: 700; }
+    .empty { padding: 14px 0; color: var(--muted); font-size: 13px; }
+
+    @media (max-width: 760px) {
+      header { display: block; }
+      .status { margin-top: 18px; }
+      .toolbar, .actions, .cards { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div>
+        <p class="eyebrow">Painel de evidências</p>
+        <h1>Monitoramento de Sala</h1>
+        <p class="subtitle">Consulte a API do Cloudflare Worker, execute os endpoints e copie respostas formatadas para os prints da entrega.</p>
+      </div>
+      <div class="status"><span id="status-dot" class="dot"></span><span id="status-text">Aguardando consulta</span></div>
+    </header>
+
+    <section class="toolbar" aria-label="Configuração da API">
+      <label>
+        URL base do Worker
+        <input id="base-url" value="https://flat-recipe-5685.vinidotto02.workers.dev" spellcheck="false">
+      </label>
+      <button id="run-all" type="button">Executar todos os GET</button>
+      <button id="clear" class="secondary" type="button">Limpar respostas</button>
+    </section>
+
+    <div class="section-title">
+      <h2>Registrar dados</h2>
+      <span class="hint">As respostas aparecem nos cartões abaixo.</span>
+    </div>
+
+    <section class="actions">
+      <article class="panel">
+        <h3>Registrar movimento</h3>
+        <p>Executa <code>POST /movimento</code>.</p>
+        <button type="button" data-post="movimento">Enviar movimento</button>
+      </article>
+
+      <article class="panel">
+        <h3>Registrar leitura de luz</h3>
+        <p>Executa <code>POST /luz</code> com os valores informados.</p>
+        <div class="form-row">
+          <label>
+            Valor LDR
+            <input id="ldr-value" type="number" min="0" max="4095" value="2500">
+          </label>
+          <label class="checkbox">
+            <input id="light-on" type="checkbox" checked>
+            Luz acesa
+          </label>
+          <button type="button" data-post="luz">Enviar leitura</button>
+        </div>
+      </article>
+    </section>
+
+    <div class="section-title">
+      <h2>Consultas da API</h2>
+      <span class="hint">HTTP, tempo e JSON retornado</span>
+    </div>
+
+    <section id="cards" class="cards">
+      <article class="card" data-route="ultimo-movimento">
+        <div class="card-head"><div class="route"><span class="method">GET</span><h3 class="card-title"><code>/ultimo-movimento</code></h3></div><div class="result-meta"><span class="http">—</span><span class="duration">—</span></div></div>
+        <pre class="output">Clique em “Consultar”.</pre>
+        <div class="card-foot"><button class="secondary run-one" type="button">Consultar</button></div>
+      </article>
+
+      <article class="card" data-route="por-hora">
+        <div class="card-head"><div class="route"><span class="method">GET</span><h3 class="card-title"><code>/por-hora</code></h3></div><div class="result-meta"><span class="http">—</span><span class="duration">—</span></div></div>
+        <pre class="output">Clique em “Consultar”.</pre>
+        <div class="card-foot"><button class="secondary run-one" type="button">Consultar</button></div>
+      </article>
+
+      <article class="card" data-route="luz-resumo">
+        <div class="card-head"><div class="route"><span class="method">GET</span><h3 class="card-title"><code>/luz-resumo</code></h3></div><div class="result-meta"><span class="http">—</span><span class="duration">—</span></div></div>
+        <pre class="output">Clique em “Consultar”.</pre>
+        <div class="card-foot"><button class="secondary run-one" type="button">Consultar</button></div>
+      </article>
+
+      <article class="card" data-route="desperdicio">
+        <div class="card-head"><div class="route"><span class="method">GET</span><h3 class="card-title"><code>/desperdicio</code></h3></div><div class="result-meta"><span class="http">—</span><span class="duration">—</span></div></div>
+        <pre class="output">Clique em “Consultar”.</pre>
+        <div class="card-foot"><button class="secondary run-one" type="button">Consultar</button></div>
+      </article>
+    </section>
+
+    <div class="section-title">
+      <h2>Histórico das chamadas</h2>
+      <button id="clear-log" class="danger" type="button">Limpar histórico</button>
+    </div>
+    <section class="panel log" id="log"><div class="empty">Nenhuma chamada executada ainda.</div></section>
+  </main>
+
+  <script>
+    const getRoutes = ["ultimo-movimento", "por-hora", "luz-resumo", "desperdicio"];
+    const baseUrlInput = document.querySelector("#base-url");
+    const statusDot = document.querySelector("#status-dot");
+    const statusText = document.querySelector("#status-text");
+    const log = document.querySelector("#log");
+    let history = [];
+
+    function baseUrl() {
+      return baseUrlInput.value.trim().replace(/\/+$/, "");
+    }
+
+    function setStatus(ok, text) {
+      statusDot.className = `dot ${ok ? "ok" : "error"}`;
+      statusText.textContent = text;
+    }
+
+    function formatJson(value) {
+      if (typeof value === "string") return value;
+      return JSON.stringify(value, null, 2);
+    }
+
+    function addLog(method, route, status, duration) {
+      history.unshift({
+        time: new Date().toLocaleTimeString("pt-BR"),
+        method,
+        route,
+        status,
+        duration
+      });
+      history = history.slice(0, 20);
+      renderLog();
+    }
+
+    function renderLog() {
+      if (!history.length) {
+        log.innerHTML = '<div class="empty">Nenhuma chamada executada ainda.</div>';
+        return;
+      }
+
+      log.innerHTML = history.map(item => `
+        <div class="log-row">
+          <span>${item.time}</span>
+          <strong><code>${item.method}</code> ${item.route}</strong>
+          <span>${item.status} · ${item.duration} ms</span>
+        </div>
+      `).join("");
+    }
+
+    async function request(route, options = {}) {
+      const method = options.method || "GET";
+      const started = performance.now();
+
+      try {
+        const response = await fetch(`${baseUrl()}/${route}`, {
+          ...options,
+          headers: { Accept: "application/json", ...(options.headers || {}) }
+        });
+        const duration = Math.round(performance.now() - started);
+        const text = await response.text();
+        let data;
+
+        try { data = text ? JSON.parse(text) : null; }
+        catch { data = text; }
+
+        addLog(method, `/${route}`, response.status, duration);
+        setStatus(response.ok, response.ok ? `Última chamada: ${method} /${route}` : `Erro HTTP ${response.status}`);
+        return { response, data, duration };
+      } catch (error) {
+        const duration = Math.round(performance.now() - started);
+        addLog(method, `/${route}`, "rede", duration);
+        setStatus(false, "Não foi possível conectar à API");
+        throw error;
+      }
+    }
+
+    function renderCard(route, result) {
+      const card = document.querySelector(`[data-route="${route}"]`);
+      if (!card) return;
+      const badge = card.querySelector(".http");
+      badge.textContent = result.response ? result.response.status : "erro";
+      badge.classList.toggle("error", !result.response?.ok);
+      card.querySelector(".duration").textContent = `${result.duration} ms`;
+      card.querySelector(".output").textContent = formatJson(result.data);
+    }
+
+    async function runGet(route) {
+      const card = document.querySelector(`[data-route="${route}"]`);
+      const button = card.querySelector(".run-one");
+      button.disabled = true;
+      button.textContent = "Consultando...";
+
+      try {
+        const result = await request(route);
+        renderCard(route, result);
+      } catch (error) {
+        card.querySelector(".output").textContent = `Erro de conexão: ${error.message}`;
+        card.querySelector(".http").textContent = "erro";
+        card.querySelector(".http").classList.add("error");
+      } finally {
+        button.disabled = false;
+        button.textContent = "Consultar";
+      }
+    }
+
+    async function runPost(route) {
+      const button = document.querySelector(`[data-post="${route}"]`);
+      button.disabled = true;
+      button.textContent = "Enviando...";
+
+      const options = { method: "POST" };
+      if (route === "luz") {
+        options.headers = { "Content-Type": "application/json" };
+        options.body = JSON.stringify({
+          valor: Number(document.querySelector("#ldr-value").value),
+          acesa: document.querySelector("#light-on").checked ? 1 : 0
+        });
+      }
+
+      try {
+        const result = await request(route, options);
+        alert(`${route === "luz" ? "Leitura de luz" : "Movimento"} enviado. HTTP ${result.response.status}`);
+      } catch (error) {
+        alert(`Erro ao enviar: ${error.message}`);
+      } finally {
+        button.disabled = false;
+        button.textContent = route === "luz" ? "Enviar leitura" : "Enviar movimento";
+      }
+    }
+
+    document.querySelectorAll(".run-one").forEach(button => {
+      button.addEventListener("click", () => runGet(button.closest(".card").dataset.route));
+    });
+    document.querySelectorAll("[data-post]").forEach(button => {
+      button.addEventListener("click", () => runPost(button.dataset.post));
+    });
+
+    document.querySelector("#run-all").addEventListener("click", async event => {
+      event.currentTarget.disabled = true;
+      event.currentTarget.textContent = "Consultando...";
+      await Promise.all(getRoutes.map(runGet));
+      event.currentTarget.disabled = false;
+      event.currentTarget.textContent = "Executar todos os GET";
+    });
+
+    document.querySelector("#clear").addEventListener("click", () => {
+      document.querySelectorAll(".output").forEach(output => output.textContent = "Clique em “Consultar”.");
+      document.querySelectorAll(".http").forEach(badge => { badge.textContent = "—"; badge.classList.remove("error"); });
+      document.querySelectorAll(".duration").forEach(duration => duration.textContent = "—");
+      setStatus(false, "Aguardando consulta");
+    });
+
+    document.querySelector("#clear-log").addEventListener("click", () => {
+      history = [];
+      renderLog();
+    });
+  </script>
+</body>
+</html>
